@@ -1,0 +1,39 @@
+name: Namer
+version: "1.0.0"
+slug: namer
+description: "Namer - Tool for renaming and tagging adult video files with metadata from ThePornDB"
+url: "https://github.com/brunzbrunz/namer-addon"
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+map:
+  - share:rw
+  - media:rw
+ports:
+  6980/tcp: 6980
+ports_description:
+  6980/tcp: "Web interface"
+webui: "http://[HOST]:[PORT:6980]"
+environment:
+  NAMER_CONFIG: "/config/namer.cfg"
+options:
+  message: "Hello world..."
+  porndb_token: ""
+  watch_dir: "/media/watch"
+  work_dir: "/media/work"
+  failed_dir: "/media/failed"
+  dest_dir: "/media/dest"
+  web: true
+  web_port: 6980
+schema:
+  message: "str?"
+  porndb_token: "str"
+  watch_dir: "str"
+  work_dir: "str"
+  failed_dir: "str"
+  dest_dir: "str"
+  web: "bool"
+  web_port: "port"
+image: "ghcr.io/brunzbrunz/{arch}-addon-namer"

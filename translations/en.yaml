@@ -1,0 +1,25 @@
+configuration:
+  message:
+    name: Message
+    description: The message that will be printed to the log when starting this add-on.
+  porndb_token:
+    name: ThePornDB API Token
+    description: Your API token from ThePornDB. Required for the add-on to function.
+  watch_dir:
+    name: Watch Directory
+    description: The directory where Namer will watch for new files.
+  work_dir:
+    name: Work Directory
+    description: The directory where Namer moves files during processing.
+  failed_dir:
+    name: Failed Directory
+    description: The directory where Namer moves files that couldn't be matched.
+  dest_dir:
+    name: Destination Directory
+    description: The directory where Namer will place successfully processed files.
+  web:
+    name: Web Interface
+    description: Enable or disable the web interface.
+  web_port:
+    name: Web Port
+    description: Port for the web interface.

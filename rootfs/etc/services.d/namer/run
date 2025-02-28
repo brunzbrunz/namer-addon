@@ -1,0 +1,194 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the namer service
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+# Declare variables
+declare porndb_token
+declare watch_dir
+declare work_dir
+declare failed_dir
+declare dest_dir
+declare web
+declare web_port
+
+# Get configuration values from config.yaml options
+message=$(bashio::config 'message')
+porndb_token=$(bashio::config 'porndb_token')
+watch_dir=$(bashio::config 'watch_dir')
+work_dir=$(bashio::config 'work_dir')
+failed_dir=$(bashio::config 'failed_dir')
+dest_dir=$(bashio::config 'dest_dir')
+web=$(bashio::config 'web')
+web_port=$(bashio::config 'web_port')
+
+# Create the namer.cfg configuration file
+bashio::log.info "Creating namer.cfg configuration file..."
+
+cat > /config/namer.cfg << EOF
+######### These are settings for renaming on the command line (python -m namer) #########
+# Your PornDB token, required for all modes
+porndb_token = ${porndb_token}
+
+# Whether to show ANSI colors in interactive mode (yes or no)
+colors = yes
+
+# Destination of renamed video files and relative path
+# The relative path uses these variables from a PornDB scene:
+# {studio} {date} {name} {id} {actors} {parent_studio} {ext} {search_term} {phash}
+new_relative_path_name = {studio}/{studio}.{date}.{name}{ext}
+
+# Preferred log name for namer logs, defaults to _namer.log
+log_suffix = _namer.log
+
+# Whether to write a rename log for all processed files (yes or no)
+enable_log = yes
+
+# Whether to prefer the directory name for parsing over file names
+# when using the -d flag (yes or no)
+prefer_dir_name_if_available = yes
+
+# Whether to move the directory itself and not just the video on rename
+move_dir = yes
+
+# Whether to also translate - to . and . to - if a first parse attempt
+# doesn't produce a valid date as Troubleshooting measure (yes or no)
+translate_filename_separators = yes
+
+# A list of file patterns to ignore if they appear in a watched directory
+# You can use shell glob patterns
+ignore_patterns = [
+  "*/metadata/*.jpg",
+  "*.nfo"
+]
+
+######### These are settings for mp4 tag editing #########
+# Whether to tag the output file with metadata from PornDB
+enable_tagging = yes
+
+# The poster image to use (poster, poster_nsfw, poster_small, poster_medium, fanart, fanart_nsfw)
+poster_type = poster
+
+# Whether to download and embed a poster image in the mp4 file
+enable_poster = yes
+
+# Whether to embed the full PornDB title (studio - name) in the title tag
+# otherwise just the name is used
+embed_full_title = yes
+
+# Whether to translate the genres from the scene (yes or no, see the next option)
+# or to use the genres as returned by PornDB
+translate_genres = no
+
+# Comma-separated list of genres to use when translate_genres is yes
+genres = Amateur,Anal,Asian,BBW,Babysitter,Big Ass,Big Dick,Big Tits,Blonde,Blowjob,Bondage,Brunette,Bukkake,Cheating,College,Compilation,Cosplay,Creampie,Cumshot,DP,Ebony,Facial,Fetish,Fisting,Footjob,Gangbang,Group,Hairy,Handjob,Hardcore,Interracial,Interview,Japanese,Latina,Lesbian,Massage,Masturbation,MILF,Orgy,POV,Public,Redhead,Rimming,Rough,Sex,Solo,Squirt,Striptease,Teen,Threesome,Toys,Transgender,Virtual Reality
+
+# Comma-separated list of tag fields to write when available (release_date, site, studio, director, id, title, original_title,
+# description, tags, genres, actors, collections, poster, poster_nsfw, poster_small, poster_medium, fanart, fanart_nsfw
+# url, all)
+tags = all
+
+# A local directory to store nfo files formatted for Kodi with scene info
+# Leave blank to disable.  nfo_dir must be a directory that exists.
+# If the directory is not a parent of the media file the NFO will be named
+# media_filename.nfo otherwise it will follow Kodi conventions
+nfo_dir = 
+
+######### These are settings for watchdog service and web UI #########
+# The root url for the web service, in case behind a reverse proxy
+web_root = 
+
+# Whether to use internal web server in watchdog mode
+web = ${web}
+
+# Port to run web server from
+web_port = ${web_port}
+
+# List of interfaces to bind to, defaults to localhost only, use 0.0.0.0 for all
+web_bind =
+
+# Destination of renamed video files and relative path
+# The relative path uses these variables from a PornDB scene:
+# {studio} {date} {name} {id} {actors} {parent_studio} {ext} {search_term} {phash}
+watchdog_rename_pattern = {studio}/{studio}.{date}.{name}{ext}
+
+# Directory to watch for new content
+watch_dir = ${watch_dir}
+
+# Directory to use for in-progress work
+work_dir = ${work_dir}
+
+# Directory to use for failed matches
+failed_dir = ${failed_dir}
+
+# Directory to use for completed matches
+dest_dir = ${dest_dir}
+
+# Cron compatible time to retry failed matches
+retry_time = 0 3 * * *
+
+# Cron compatible time to build phashes of matched videos for failed videos
+phash_time = 30 4 * * *
+
+# List of patterns to exclude from watching, shell glob format
+watch_dir_exclude_patterns = [
+  "*/metadata/*.jpg",
+  "*.nfo"
+]
+
+# Number of matches in history to show in UI
+recent_match_count = 10
+
+# Temp directory for downloads of posters and trailers
+# Do NOT make this the same as or a parent of any of your video directories as
+# video will be stored in this director during processing
+temp_dir = /tmp
+
+# Type of files to match when looking recursively, defaults to mp4, mkv, avi, mov, flv
+movie_ext = mp4,mkv,avi,mov,flv
+
+# Whether to download a trailer if available
+enable_trailer = no
+
+# If supplied will set file permissions on downloaded videos
+# Should be a number like 0775.  Leave blank for default
+file_permissions = 
+
+# A list of studios that are exempt from date checking
+# The date field is not required for matching that studio
+# studios that don't include dates (or only include vague dates
+# like the year) will benefit from this list
+# in general most matches will require a date to match
+no_date_required_studios = Virtualtaboo
+
+# Remove "Episode N" from the end of scene name
+# The N is expected to be a number
+# Useful for site like "Holed" that add this on with no value
+remove_episode_suffix = yes
+EOF
+
+# Create required directories if they don't exist
+for DIR in "$watch_dir" "$work_dir" "$failed_dir" "$dest_dir"; do
+    if [ ! -d "$DIR" ]; then
+        bashio::log.info "Creating directory: $DIR"
+        mkdir -p "$DIR"
+    fi
+done
+
+# Start namer
+bashio::log.info "Starting namer in watchdog mode..."
+bashio::log.info "Web interface available at: http://localhost:${web_port}/"
+
+if bashio::var.true "$web"; then
+    bashio::log.info "Web interface is enabled on port ${web_port}"
+else
+    bashio::log.info "Web interface is disabled"
+fi
+
+bashio::log.info "Using watch directory: ${watch_dir}"
+bashio::log.info "Using destination directory: ${dest_dir}"
+bashio::log.info "${message:="Hello World..."}"
+
+# Run namer in watchdog mode
+exec python3 -m namer watchdog
