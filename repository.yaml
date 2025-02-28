@@ -1,0 +1,4 @@
+# https://developers.home-assistant.io/docs/add-ons/repository#repository-configuration
+name: named-addon
+url: 'https://github.com/brunzbrunz/named-addmon'
+maintainer: Herr Brunzmeister <rischdisch@brunzig.de>
