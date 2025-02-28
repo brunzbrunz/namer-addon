@@ -1,4 +1,4 @@
 # https://developers.home-assistant.io/docs/add-ons/repository#repository-configuration
 name: named-addon
-url: 'https://github.com/brunzbrunz/named-addon'
+url: 'https://github.com/brunzbrunz/namer-addon'
 maintainer: Herr Brunzmeister <rischdisch@brunzig.de>
